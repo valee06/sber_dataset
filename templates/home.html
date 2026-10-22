@@ -1,0 +1,44 @@
+{{define "content"}}
+<h1>Главная</h1>
+{{if .Empty}}
+{{template "nodata" .}}
+{{else}}
+<div class="kpis">
+  <div class="kpi"><div class="kpi-l">Всего операций</div><div class="kpi-v">{{.Fac.Total}}</div><div class="kpi-s">{{date .Fac.From}} — {{date .Fac.To}}</div></div>
+  <div class="kpi"><div class="kpi-l">Поступления, ₽</div><div class="kpi-v green">{{money .Res.InSum}}</div><div class="kpi-s">{{.Res.InCount}} операций</div></div>
+  <div class="kpi"><div class="kpi-l">Списания, ₽</div><div class="kpi-v red">{{money .Res.OutSum}}</div><div class="kpi-s">{{.Res.OutCnt}} операций</div></div>
+  <div class="kpi"><div class="kpi-l">Лицевых счетов</div><div class="kpi-v">{{.Fac.LSNum}}</div><div class="kpi-s">определены по назначению платежа</div></div>
+  <div class="kpi"><div class="kpi-l">Привязка платежей</div><div class="kpi-v">{{.LinkedPct}}%</div><div class="kpi-s">{{.Res.Linked}} из {{.Res.InCount}} к лицевым счетам</div></div>
+</div>
+
+{{with .Last}}
+<section class="card">
+  <h2>Последняя загрузка</h2>
+  <p>Файл <b>{{.File}}</b>{{if .Org}}, {{.Org}}{{end}}, счёт {{.Account}}, загружен {{dt .At}}.</p>
+  <p class="muted">В файле {{.Total}} операций за период {{date .From}} — {{date .To}}: приход {{.InCount}} на {{money .InSum}}, расход {{.OutCount}} на {{money .OutSum}}.</p>
+  <div class="btns">
+    <a class="btn primary" href="/import">Импорт выписки</a>
+    <a class="btn" href="/payments">Раздел «Платежи»</a>
+    <a class="btn" href="/operations">Все операции</a>
+  </div>
+</section>
+{{end}}
+
+<section class="card">
+  <h2>Последние операции</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Дата</th><th>Направление</th><th>Контрагент</th><th>№ док.</th><th class="r">Сумма, ₽</th><th>Назначение</th></tr></thead>
+    <tbody>
+    {{range .Recent}}<tr>
+      <td class="nw">{{date .Date}}</td>
+      <td><span class="dir {{.Direction}}">{{dirLabel .Direction}}</span></td>
+      <td>{{.Counterparty}}</td>
+      <td class="nw">{{if .DocNo}}№{{.DocNo}}{{else}}—{{end}}</td>
+      <td class="r nw {{if eq .Direction "in"}}green{{else}}red{{end}}">{{money .AmountKop}}</td>
+      <td class="purpose">{{.Purpose}}</td>
+    </tr>{{end}}
+    </tbody>
+  </table></div>
+</section>
+{{end}}
+{{end}}

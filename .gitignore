@@ -1,0 +1,6 @@
+data/db.json
+data/db.json.tmp
+data/sessions/
+data/sample/
+*.xlsx
+.DS_Store

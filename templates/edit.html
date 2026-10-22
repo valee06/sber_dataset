@@ -1,0 +1,31 @@
+{{define "content"}}
+<h1>Изменение операции</h1>
+<section class="card">
+  <dl class="info">
+    <dt>Дата</dt><dd>{{date .Op.Date}}{{if .Op.DocNo}}, платёжное поручение №{{.Op.DocNo}}{{end}}</dd>
+    <dt>Направление</dt><dd><span class="dir {{.Op.Direction}}">{{dirLabel .Op.Direction}}</span></dd>
+    <dt>Контрагент</dt><dd>{{.Op.Counterparty}}{{if .Op.Via}} <span class="muted">(через {{.Op.Via}})</span>{{end}}</dd>
+    <dt>Сумма</dt><dd class="{{if eq .Op.Direction "in"}}green{{else}}red{{end}}"><b>{{money .Op.AmountKop}} ₽</b></dd>
+    <dt>Назначение</dt><dd>{{.Op.Purpose}}</dd>
+  </dl>
+  <form method="post" action="/edit" class="editform">
+    <input type="hidden" name="id" value="{{.Op.ID}}">
+    <input type="hidden" name="next" value="{{.Next}}">
+    <label>Категория
+      <select name="category">{{range .Cats}}<option {{if eq . $.Op.Category}}selected{{end}}>{{.}}</option>{{end}}</select>
+    </label>
+    {{if eq .Op.Direction "in"}}
+    <label>Лицевой счёт (номер квартиры)
+      <input type="text" name="ls" value="{{.Op.LS}}" inputmode="numeric" maxlength="3" placeholder="не привязан">
+    </label>
+    {{end}}
+    <label>Период оплаты
+      <input type="month" name="period" value="{{.Op.Period}}">
+    </label>
+    <div class="btns">
+      <button class="btn primary" type="submit">Сохранить</button>
+      <a class="btn" href="{{.Next}}">Отмена</a>
+    </div>
+  </form>
+</section>
+{{end}}

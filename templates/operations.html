@@ -1,0 +1,30 @@
+{{define "content"}}
+<h1>Операции по счёту</h1>
+{{template "filters" .}}
+{{if .NoData}}{{template "nodata" .}}{{else}}
+<div class="stats four">
+  <div class="kpi"><div class="kpi-l">Операций найдено</div><div class="kpi-v">{{.Total}}</div><div class="kpi-s">по выбранным условиям</div></div>
+  <div class="kpi"><div class="kpi-l">Приход</div><div class="kpi-v green">{{money .Res.InSum}}</div><div class="kpi-s">{{.Res.InCount}} операций</div></div>
+  <div class="kpi"><div class="kpi-l">Расход</div><div class="kpi-v red">{{money .Res.OutSum}}</div><div class="kpi-s">{{.Res.OutCnt}} операций</div></div>
+  <div class="kpi"><div class="kpi-l">Оборот</div><div class="kpi-v">{{money (add64 .Res.InSum .Res.OutSum)}}</div><div class="kpi-s">приход + расход</div></div>
+</div>
+<section class="card">
+  <div class="tablewrap"><table>
+    <thead><tr><th>Дата</th><th>Напр.</th><th>Контрагент</th><th>Л/С</th><th>Категория</th><th class="r">Сумма, ₽</th><th>Назначение</th><th></th></tr></thead>
+    <tbody>
+    {{range .Items}}<tr>
+      <td class="nw">{{date .Date}}</td>
+      <td><span class="dir {{.Direction}}">{{dirLabel .Direction}}</span></td>
+      <td>{{.Counterparty}}{{if .Via}}<div class="sub">через {{.Via}}</div>{{end}}</td>
+      <td class="nw">{{if .LS}}<a href="/operations?ls={{.LS}}">№{{.LS}}</a>{{else}}—{{end}}</td>
+      <td>{{.Category}}{{if .Manual}} <span class="st manual" title="Исправлено вручную">вручную</span>{{end}}</td>
+      <td class="r nw {{if eq .Direction "in"}}green{{else}}red{{end}}">{{money .AmountKop}}</td>
+      <td class="purpose">{{.Purpose}}</td>
+      <td><a class="btn small" href="/edit?id={{.ID}}&next={{urlq $.Self}}">Изменить</a></td>
+    </tr>{{else}}<tr><td colspan="8" class="muted">Операций по выбранным условиям нет</td></tr>{{end}}
+    </tbody>
+  </table></div>
+  {{template "pager" .}}
+</section>
+{{end}}
+{{end}}

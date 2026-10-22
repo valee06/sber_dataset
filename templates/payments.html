@@ -1,0 +1,29 @@
+{{define "content"}}
+<h1>Платежи</h1>
+{{template "filters" .}}
+{{if .NoData}}{{template "nodata" .}}{{else}}
+<div class="stats">
+  <div class="kpi"><div class="kpi-l">Поступлений найдено</div><div class="kpi-v">{{.Res.InCount}}</div><div class="kpi-s">по выбранным условиям</div></div>
+  <div class="kpi"><div class="kpi-l">Сумма поступлений</div><div class="kpi-v green">{{money .Res.InSum}}</div><div class="kpi-s">₽ по выбранным условиям</div></div>
+  <div class="kpi"><div class="kpi-l">Привязано к лицевым счетам</div><div class="kpi-v">{{.Res.Linked}} / {{.Res.InCount}}</div><div class="kpi-s">из них вручную: {{.Res.LinkedMn}}</div></div>
+</div>
+<section class="card">
+  <div class="tablewrap"><table>
+    <thead><tr><th>Дата</th><th>Лицевой счёт</th><th>Плательщик</th><th>Категория</th><th>Период</th><th class="r">Сумма, ₽</th><th>Назначение</th><th></th></tr></thead>
+    <tbody>
+    {{range .Items}}<tr>
+      <td class="nw">{{date .Date}}</td>
+      <td class="nw">{{if .LS}}<a href="/payments?ls={{.LS}}">№{{.LS}}</a>{{else}}<span class="st warn">не привязан</span>{{end}}</td>
+      <td>{{.Counterparty}}{{if .Via}}<div class="sub">через {{.Via}}</div>{{end}}</td>
+      <td>{{.Category}}{{if .Manual}} <span class="st manual" title="Исправлено вручную">вручную</span>{{end}}</td>
+      <td class="nw">{{period .Period}}</td>
+      <td class="r nw green">{{money .AmountKop}}</td>
+      <td class="purpose">{{.Purpose}}</td>
+      <td><a class="btn small" href="/edit?id={{.ID}}&next={{urlq $.Self}}">Изменить</a></td>
+    </tr>{{else}}<tr><td colspan="8" class="muted">Платежей по выбранным условиям нет</td></tr>{{end}}
+    </tbody>
+  </table></div>
+  {{template "pager" .}}
+</section>
+{{end}}
+{{end}}

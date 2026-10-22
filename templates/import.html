@@ -1,0 +1,85 @@
+{{define "content"}}
+<h1>Импорт выписки</h1>
+
+<section class="card">
+  <h2>Загрузка файла выписки</h2>
+  <p class="muted">Поддерживается формат файла СберБизнес (.xlsx) с платёжными поручениями. Программа разберёт операции, определит лицевой счёт плательщика (по номеру квартиры в назначении платежа или адресе), период оплаты и категорию. Перед сохранением вы увидите предпросмотр и сможете исправить данные или снять отметки с лишних строк.</p>
+  <form method="post" action="/import/upload" enctype="multipart/form-data" class="uploadform">
+    <label>Файл выписки (.xlsx)
+      <input type="file" name="file" accept=".xlsx" required>
+    </label>
+    <div class="btns">
+      <button class="btn primary" type="submit" id="upbtn">Разобрать файл</button>
+    </div>
+  </form>
+  {{if .SampleOK}}
+  <form method="post" action="/import/sample" class="inline">
+    <button class="btn" type="submit">Разобрать приложенную выписку</button>
+    <span class="muted">{{.SampleNme}}</span>
+  </form>
+  {{end}}
+  <p class="hint">Пока вы не нажмёте «Импортировать выбранные операции», база данных не меняется. Если закрыть страницу, разобранные данные сохранятся в рамках сессии — их можно подтвердить позже.</p>
+</section>
+
+{{with .Stg}}
+<section class="card">
+  <h2>Предпросмотр: {{.File}}</h2>
+  <p class="muted">{{if $.Stg.Org}}{{$.Stg.Org}}, {{end}}счёт {{.Account}}, период {{date .From}} — {{date .To}}. Разобрано {{len .Ops}} операций:
+    приход {{$.Stats.InCount}} на {{money $.Stats.InSum}} ₽, расход {{$.Stats.OutCount}} на {{money $.Stats.OutSum}} ₽.
+    {{if $.Stats.Dups}}Уже есть в базе: {{$.Stats.Dups}} (отметки сняты).{{end}}</p>
+  {{if .Warnings}}<div class="flash err">Не удалось разобрать: {{len .Warnings}} поручений. {{index .Warnings 0}}</div>{{end}}
+
+  <form method="post" action="/import/commit" id="commitform">
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="all" checked> Выбрать все</label>
+      <span class="muted">Выбрано: <b id="cnt">{{$.Stats.Selected}}</b> из {{len .Ops}}</span>
+    </div>
+    <div class="tablewrap tall"><table class="preview">
+      <thead><tr><th></th><th>Дата</th><th>Напр.</th><th>Контрагент</th><th>Л/С</th><th>Категория</th><th>Период</th><th class="r">Сумма, ₽</th><th>Назначение</th></tr></thead>
+      <tbody>
+      {{range $i, $o := .Ops}}<tr{{if $o.Duplicate}} class="dup"{{end}}>
+        <td><input type="checkbox" class="rowchk" name="sel" value="{{$i}}" {{if not $o.Duplicate}}checked{{end}}></td>
+        <td class="nw">{{date $o.Date}}</td>
+        <td><span class="dir {{$o.Direction}}">{{dirLabel $o.Direction}}</span></td>
+        <td>{{$o.Counterparty}}{{if $o.Via}}<div class="sub">через {{$o.Via}}</div>{{end}}{{if $o.Duplicate}}<div><span class="st warn">уже в БД</span></div>{{end}}</td>
+        <td>{{if eq $o.Direction "in"}}<input class="ls" type="text" inputmode="numeric" name="ls-{{$i}}" value="{{$o.LS}}" placeholder="—" maxlength="3">{{else}}—{{end}}</td>
+        <td><select name="cat-{{$i}}">{{range cats $o.Direction}}<option {{if eq . $o.Category}}selected{{end}}>{{.}}</option>{{end}}</select></td>
+        <td class="nw">{{period $o.Period}}</td>
+        <td class="r nw {{if eq $o.Direction "in"}}green{{else}}red{{end}}">{{money $o.AmountKop}}</td>
+        <td class="purpose">{{$o.Purpose}}</td>
+      </tr>{{end}}
+      </tbody>
+    </table></div>
+    <div class="btns sticky">
+      <button class="btn primary" type="submit">Импортировать выбранные операции</button>
+      <button class="btn" type="submit" formaction="/import/cancel" formnovalidate>Отменить</button>
+    </div>
+  </form>
+</section>
+<script>
+(function(){
+  var all=document.getElementById('all'), cnt=document.getElementById('cnt');
+  var rows=[].slice.call(document.querySelectorAll('.rowchk'));
+  function upd(){var n=rows.filter(function(r){return r.checked}).length;cnt.textContent=n;all.checked=(n===rows.length);}
+  all.addEventListener('change',function(){rows.forEach(function(r){r.checked=all.checked});upd();});
+  rows.forEach(function(r){r.addEventListener('change',upd)});upd();
+  document.getElementById('commitform').addEventListener('submit',function(e){
+    if(e.submitter && e.submitter.formAction.indexOf('/import/commit')>-1 && !rows.some(function(r){return r.checked})){e.preventDefault();alert('Не выбрано ни одной операции');}
+  });
+})();
+</script>
+{{end}}
+
+<section class="card">
+  <h2>Журнал загрузок</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Когда</th><th>Файл</th><th>Статус</th><th class="r">Всего</th><th class="r">Приход</th><th class="r">Расход</th></tr></thead>
+    <tbody>
+    {{range .Journal}}<tr>
+      <td class="nw">{{dt .At}}</td><td>{{.File}}</td><td><span class="st ok">{{.Status}}</span></td>
+      <td class="r">{{.Total}}</td><td class="r green nw">{{money .InSum}}</td><td class="r red nw">{{money .OutSum}}</td>
+    </tr>{{else}}<tr><td colspan="6" class="muted">Загрузок пока не было</td></tr>{{end}}
+    </tbody>
+  </table></div>
+</section>
+{{end}}
